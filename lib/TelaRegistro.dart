@@ -50,15 +50,36 @@ class TelaRegistroState extends State<TelaRegistro> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    int hp = int.parse(hpController.text);
-                    Pokemon pokemon = Pokemon(
-                      nomeController.text,
-                      tipoController.text,
-                      hp,
-                    );
+                    final nome = nomeController.text.trim();
+                    final tipo = tipoController.text.trim();
+                    final hp = int.tryParse(hpController.text.trim());
 
-                    await BancoDados().inserirPokemon(pokemon);
-                    Navigator.pop(context);
+                    if (nome.isEmpty || tipo.isEmpty || hp == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Preencha nome e tipo e informe um HP válido.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Pokemon pokemon = Pokemon(nome, tipo, hp);
+
+                    try {
+                      await BancoDados().inserirPokemon(pokemon);
+                      if (!context.mounted) return;
+                      Navigator.pop(context, true);
+                    } catch (error) {
+                      debugPrint('Erro ao salvar Pokémon no Firestore: $error');
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Não foi possível salvar: $error'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Salvar'),
                 ),

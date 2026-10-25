@@ -64,12 +64,9 @@ class ListaDePokemonsState extends State<ListaDePokemons> {
   }
 
   Future<void> buscarPokemons() async {
-    var resultado = await BancoDados().buscarPokemons();
-    List<Pokemon> lista = [];
+    final lista = await BancoDados().buscarPokemons();
 
-    for (var item in resultado) {
-      lista.add(Pokemon.fromMap(item));
-    }
+    if (!mounted) return;
 
     setState(() {
       pokemons = lista;

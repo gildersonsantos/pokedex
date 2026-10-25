@@ -1,5 +1,5 @@
 class Pokemon {
-  int? id;
+  final String? id;
   final String name;
   final String type;
   final int hp;
@@ -7,18 +7,11 @@ class Pokemon {
   Pokemon(this.name, this.type, this.hp, [this.id]);
 
   Map<String, dynamic> toMap() {
-    var mapa = <String, dynamic>{'name': name, 'type': type, 'hp': hp};
-
-    if (id != null) {
-      mapa['id'] = id;
-    }
-
-    return mapa;
+    return <String, dynamic>{'name': name, 'type': type, 'hp': hp};
   }
 
-  Pokemon.fromMap(Map<String, dynamic> mapa)
-    : id = mapa['id'],
-      name = mapa['name'],
-      type = mapa['type'],
-      hp = mapa['hp'];
+  Pokemon.fromMap(this.id, Map<String, dynamic> mapa)
+    : name = mapa['name'] as String,
+      type = mapa['type'] as String,
+      hp = mapa['hp'] as int;
 }

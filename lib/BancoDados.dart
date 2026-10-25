@@ -1,87 +1,33 @@
-import 'package:sqflite/sqflite.dart';
-import 'dart:async';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pokedex/Pokemon.dart';
 
 class BancoDados {
-  String tabelaPokemon = 'pokemons';
-  String colunaId = 'id';
-  String colunaNome = 'name';
-  String colunaTipo = 'type';
-  String colunaHp = 'hp';
+  final CollectionReference<Map<String, dynamic>> _pokemons =
+      FirebaseFirestore.instance.collection('pokemons');
+      
+  Future<String> inserirPokemon(Pokemon pokemon) async {
+    final documento = await _pokemons.add(pokemon.toMap());
+    return documento.id;
+  }
+  
+  Future<List<Pokemon>> buscarPokemons() async {
+    final resultado = await _pokemons.orderBy('name').get();
 
-  BancoDados._interno();
-
-  static final BancoDados _bancoDados = BancoDados._interno();
-
-  factory BancoDados() {
-    return _bancoDados;
+    return resultado.docs
+        .map((doc) => Pokemon.fromMap(doc.id, doc.data()))
+        .toList();
   }
 
-  static Database? _banco;
-
-  Future<Database> inicializarBanco() async {
-    Directory diretorio = await getApplicationDocumentsDirectory();
-    String caminho = '${diretorio.path}/pokedex.db';
-
-    var banco = await openDatabase(caminho, version: 1, onCreate: _criarBanco);
-
-    return banco;
-  }
-
-  void _criarBanco(Database banco, int novaVersao) async {
-    await banco.execute(
-      'CREATE TABLE $tabelaPokemon('
-      '$colunaId INTEGER PRIMARY KEY, '
-      '$colunaNome TEXT, '
-      '$colunaTipo TEXT, '
-      '$colunaHp INTEGER)',
-    );
-  }
-
-  Future<Database> get banco async {
-    if (_banco == null) {
-      _banco = await inicializarBanco();
+  Future<void> atualizarPokemon(Pokemon pokemon) async {
+    final id = pokemon.id;
+    if (id == null) {
+      throw StateError('O Pokémon ainda não foi salvo no Firestore.');
     }
 
-    return _banco!;
+    await _pokemons.doc(id).update(pokemon.toMap());
   }
 
-  Future<int> inserirPokemon(Pokemon pokemon) async {
-    Database banco = await this.banco;
-    var resultado = await banco.insert(tabelaPokemon, pokemon.toMap());
-
-    return resultado;
-  }
-
-  Future<List> buscarPokemons() async {
-    Database banco = await this.banco;
-    var resultado = await banco.rawQuery(
-      'SELECT * FROM $tabelaPokemon ORDER BY $colunaNome ASC',
-    );
-
-    return resultado;
-  }
-
-  Future<int> atualizarPokemon(Pokemon pokemon) async {
-    var banco = await this.banco;
-    var resultado = await banco.update(
-      tabelaPokemon,
-      pokemon.toMap(),
-      where: '$colunaId = ?',
-      whereArgs: [pokemon.id],
-    );
-
-    return resultado;
-  }
-
-  Future<int> apagarPokemon(int id) async {
-    var banco = await this.banco;
-    var resultado = await banco.rawDelete(
-      'DELETE FROM $tabelaPokemon WHERE $colunaId = $id',
-    );
-
-    return resultado;
+  Future<void> apagarPokemon(String id) async {
+    await _pokemons.doc(id).delete();
   }
 }
